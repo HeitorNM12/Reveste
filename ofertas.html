@@ -9,21 +9,9 @@ main{padding:55px 7%;max-width:1450px;margin:auto}.filters{background:#fff;paddi
 </style></head><body>
 <header><nav><div class="logo">RE<span>VESTE</span> ♻</div><a class="back" href="index.html">← Voltar para o início</a></nav>
 <div class="hero"><span class="tag">👥 Ofertas publicadas pela comunidade</span><h1>Encontre a próxima história da sua roupa.</h1><p>Explore peças para venda, troca e doação. Filtre por tamanho, marca e qualidade.</p></div></header>
-<main><h2>Ofertas da comunidade</h2><div class="filters"><input id="search" placeholder="🔎 Buscar peça ou marca"><select id="type"><option value="">Tipo: todos</option><option>Venda</option><option>Troca</option><option>Doação</option></select><select id="size"><option value="">Tamanho: todos</option><option>PP</option><option>P</option><option>M</option><option>G</option><option>GG</option></select><select id="quality"><option value="">Qualidade: todas</option><option>Como nova</option><option>Excelente</option><option>Boa</option><option>Usada, mas em bom estado</option></select><select id="brand"><option value="">Marca: todas</option></select></div><div class="grid" id="grid"></div></main>
+<main><h2>Ofertas da comunidade</h2><div class="filters"><input id="search" placeholder="🔎 Buscar peça ou marca"><select id="type"><option value="">Tipo: todos</option><option>Venda</option><option>Troca</option><option>Doação</option></select><select id="size"><option value="">Tamanho: todos</option><option>PP</option><option>P</option><option>M</option><option>G</option><option>GG</option></select><select id="quality"><option value="">Qualidade: todas</option><option>Como nova</option><option>Excelente</option><option>Boa</option><option>Usada, mas em bom estado</option></select><select id="brand"><option value="">Marca: todas</option></select><select id="region"><option value="">Região: todas</option><option>Norte</option><option>Nordeste</option><option>Centro-Oeste</option><option>Sudeste</option><option>Sul</option></select></div><div class="grid" id="grid"></div></main>
 <footer><div class="logo">RE<span>VESTE</span> ♻</div><p>Venda. Troque. Doe. Faça circular.</p></footer>
-<script>
-const offers=[
-{name:'Jaqueta jeans vintage',type:'Troca',size:'M',brand:'Levis',quality:'Excelente',owner:'Ana',emoji:'🧥'},
-{name:'Vestido floral',type:'Venda',size:'P',brand:'Zara',quality:'Como nova',owner:'Mariana',emoji:'👗'},
-{name:'Camiseta esportiva',type:'Troca',size:'G',brand:'Nike',quality:'Boa',owner:'Lucas',emoji:'👕'},
-{name:'Moletom confortável',type:'Doação',size:'M',brand:'Sem marca',quality:'Usada, mas em bom estado',owner:'Carla',emoji:'🧶'},
-{name:'Calça jeans',type:'Venda',size:'GG',brand:'C&A',quality:'Boa',owner:'Pedro',emoji:'👖'},
-{name:'Camisa social',type:'Troca',size:'G',brand:'Renner',quality:'Excelente',owner:'João',emoji:'👔'},
-{name:'Blusa casual',type:'Doação',size:'P',brand:'Hering',quality:'Boa',owner:'Beatriz',emoji:'👚'},
-{name:'Tênis casual',type:'Troca',size:'M',brand:'Adidas',quality:'Excelente',owner:'Rafael',emoji:'👟'}];
-const brandSelect=document.getElementById('brand');[...new Set(offers.map(o=>o.brand))].sort().forEach(b=>brandSelect.innerHTML+=`<option>${b}</option>`);
-function render(){const q=search.value.toLowerCase(),t=type.value,s=size.value,ql=quality.value,b=brand.value;const result=offers.filter(o=>(!q||(o.name+' '+o.brand+' '+o.owner).toLowerCase().includes(q))&&(!t||o.type===t)&&(!s||o.size===s)&&(!ql||o.quality===ql)&&(!b||o.brand===b));grid.innerHTML=result.length?result.map(o=>`<article class="card"><div class="photo">${o.emoji}</div><div class="info"><span class="badge">${o.type}</span><h3>${o.name}</h3><div class="meta"><b>👤 ${o.owner}</b><br>🏷️ Marca: ${o.brand}<br>📏 Tamanho: ${o.size}<br>✨ Estado: ${o.quality}</div><button class="interest" onclick="alert('Você demonstrou interesse em: ${o.name}!')">Tenho interesse</button></div></article>`).join(''):'<div class="empty">Nenhuma oferta encontrada com esses filtros.</div>'}document.querySelectorAll('input,select').forEach(x=>x.addEventListener('input',render));document.querySelectorAll('select').forEach(x=>x.addEventListener('change',render));render();
-</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://rvimgfwlxfdjtusnfhvm.supabase.co";
@@ -31,16 +19,93 @@ const SUPABASE_ANON_KEY="https://rvimgfwlxfdjtusnfhvm.supabase.co";
 const CLOUD_ENABLED=!SUPABASE_URL.startsWith("COLE_AQUI")&&!SUPABASE_ANON_KEY.startsWith("COLE_AQUI");
 const sb=CLOUD_ENABLED?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
 
-async function loadCloudOffers(){
- if(!CLOUD_ENABLED)return;
- const {data,error}=await sb.from('offers').select('*').order('created_at',{ascending:false});
- if(error){console.error(error);return;}
- offers.splice(0,offers.length,...data.map(o=>({
-   name:o.name,type:o.type,size:o.size,brand:o.brand,quality:o.quality,
-   owner:o.owner_name||'Comunidade ReVeste',emoji:o.emoji||'👕'
- })));
- render();
+const offers=[
+  {name:'Jaqueta jeans vintage',type:'Troca',size:'M',brand:'Levis',quality:'Excelente',owner:'Ana',emoji:'🧥',region:'Sudeste'},
+  {name:'Vestido floral',type:'Venda',size:'P',brand:'Zara',quality:'Como nova',owner:'Mariana',emoji:'👗',region:'Sul'},
+  {name:'Camiseta esportiva',type:'Troca',size:'G',brand:'Nike',quality:'Boa',owner:'Lucas',emoji:'👕',region:'Nordeste'}
+];
+
+const brandSelect=document.getElementById('brand');
+
+function refreshBrands(){
+  const current=brandSelect.value;
+  const brands=[...new Set(offers.map(o=>o.brand).filter(Boolean))].sort();
+  brandSelect.innerHTML='<option value="">Marca: todas</option>'+brands.map(b=>`<option>${b}</option>`).join('');
+  if(brands.includes(current)) brandSelect.value=current;
 }
+
+function escapeHtml(value=''){
+  return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+
+function render(){
+  const q=search.value.toLowerCase(),
+        t=type.value,
+        s=size.value,
+        ql=quality.value,
+        b=brand.value,
+        r=region.value;
+
+  const result=offers.filter(o =>
+    (!q || [o.name,o.brand,o.owner,o.region].join(' ').toLowerCase().includes(q)) &&
+    (!t || o.type===t) &&
+    (!s || o.size===s) &&
+    (!ql || o.quality===ql) &&
+    (!b || o.brand===b) &&
+    (!r || o.region===r)
+  );
+
+  grid.innerHTML=result.length
+    ? result.map(o=>`
+      <article class="card">
+        <div class="photo">${o.emoji||'👕'}</div>
+        <div class="info">
+          <span class="badge">${escapeHtml(o.type)}</span>
+          <h3>${escapeHtml(o.name)}</h3>
+          <div class="meta">
+            <b>👤 ${escapeHtml(o.owner)}</b><br>
+            📍 Região: ${escapeHtml(o.region||'Não informada')}<br>
+            🏷️ Marca: ${escapeHtml(o.brand||'Não informada')}<br>
+            📏 Tamanho: ${escapeHtml(o.size||'Não informado')}<br>
+            ✨ Estado: ${escapeHtml(o.quality||'Não informado')}
+          </div>
+          <button class="interest" onclick="alert('Interesse registrado na demonstração.')">Tenho interesse</button>
+        </div>
+      </article>`).join('')
+    : '<div class="empty">Nenhuma oferta encontrada com esses filtros.</div>';
+}
+
+async function loadCloudOffers(){
+  if(!CLOUD_ENABLED){ refreshBrands(); render(); return; }
+
+  const {data,error}=await sb.from('offers').select('*').order('created_at',{ascending:false});
+  if(error){
+    console.error(error);
+    grid.innerHTML='<div class="empty">Não foi possível carregar as ofertas. Verifique a configuração do Supabase.</div>';
+    return;
+  }
+
+  offers.splice(0,offers.length,...(data||[]).map(o=>({
+    id:o.id,
+    name:o.name,
+    type:o.type,
+    size:o.size,
+    brand:o.brand,
+    quality:o.quality,
+    owner:o.owner_name||'Comunidade ReVeste',
+    emoji:o.emoji||'👕',
+    region:o.region||'Não informada'
+  })));
+
+  refreshBrands();
+  render();
+}
+
+document.querySelectorAll('input,select').forEach(x=>x.addEventListener('input',render));
+document.querySelectorAll('select').forEach(x=>x.addEventListener('change',render));
 window.addEventListener('load',loadCloudOffers);
+refreshBrands();
+render();
 </script>
+
 </body></html>

@@ -127,10 +127,6 @@ label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#3346
 </div>
 </section>
 
-
-<div id="cloudStatus" style="position:fixed;left:16px;bottom:16px;z-index:999;background:#112319;color:white;padding:10px 14px;border-radius:12px;font:700 13px Arial;box-shadow:0 8px 24px #0004">
-☁️ Modo demonstração — conecte o Supabase para compartilhar anúncios
-</div>
 <footer class="footer"><div class="logo">RE<span>VESTE</span> ♻</div><p><strong>Venda. Troque. Doe. Faça circular.</strong></p><p>Uma proposta de plataforma digital para incentivar a reutilização de roupas, a economia circular e o consumo responsável.</p></footer>
 
 <div class="modal" id="authModal"><div class="modal-box">
@@ -148,7 +144,7 @@ label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#3346
 <div><label>Preço (se for venda)</label><input id="itemPrice" placeholder="Ex.: 50"></div>
 <div><label>Tamanho</label><select id="itemSize" required><option value="">Selecione</option><option>PP</option><option>P</option><option>M</option><option>G</option><option>GG</option><option>XGG</option><option>Outro</option></select></div>
 <div><label>Marca</label><input id="itemBrand" required placeholder="Ex.: Nike, Zara ou Sem marca"></div>
-<div><label>Qualidade / estado</label><select id="itemQuality" required><option value="">Selecione</option><option>Como nova</option><option>Excelente</option><option>Boa</option><option>Usada, mas em bom estado</option></select></div>
+<div><label>Qualidade / estado</label><select id="itemQuality" required><option value="">Selecione</option><option>Como nova</option><option>Excelente</option><option>Boa</option><option>Usada, mas em bom estado</option></select></div><div><label>Região</label><select id="itemRegion" required><option value="">Selecione sua região</option><option>Norte</option><option>Nordeste</option><option>Centro-Oeste</option><option>Sudeste</option><option>Sul</option></select></div>
 <div class="full"><label>Descrição</label><textarea id="itemDesc" placeholder="Conte um pouco sobre a peça e seu estado..."></textarea></div>
 </div>
 <button class="form-btn">Publicar anúncio</button>
@@ -163,83 +159,21 @@ label{display:block;font-size:13px;font-weight:800;margin-bottom:6px;color:#3346
 <div class="dash-stat"><b id="dashAds">0</b>Anúncios</div>
 <div class="dash-stat"><b id="dashActions">0</b>Ações</div>
 </div></div>
-<p style="margin-top:20px;color:#59665e">Esta versão funciona como uma demonstração no navegador. Seus dados ficam salvos neste dispositivo.</p>
+<p style="margin-top:20px;color:#59665e">Sua conta e seus anúncios ficam vinculados ao banco online da ReVeste.</p>
 <button class="form-btn" id="logoutBtn">Sair da conta</button>
 </div></div>
 
 <div class="toast" id="toast"></div>
 
-<script>
-const defaultItems=[
- {name:'Jaqueta vintage',type:'Venda',price:'R$ 85,00',emoji:'🧥',owner:'Comunidade ReVeste'},
- {name:'Vestido floral',type:'Troca',price:'Troca disponível',emoji:'👗',owner:'Comunidade ReVeste'},
- {name:'Camiseta casual',type:'Venda',price:'R$ 30,00',emoji:'👕',owner:'Comunidade ReVeste'},
- {name:'Moletom',type:'Doação',price:'Doação ❤️',emoji:'🧶',owner:'Comunidade ReVeste'}
-];
-let items=JSON.parse(localStorage.getItem('reveste_items')||'null')||defaultItems;
-let user=JSON.parse(localStorage.getItem('reveste_user')||'null');
-
-function save(){localStorage.setItem('reveste_items',JSON.stringify(items));localStorage.setItem('reveste_user',JSON.stringify(user));}
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
-function openModal(id){document.getElementById(id).classList.add('show')}
-function closeModal(id){document.getElementById(id).classList.remove('show')}
-function renderMarket(){
- const q=document.getElementById('search').value.toLowerCase(), f=document.getElementById('modeFilter').value;
- const list=items.filter(x=>(!q||x.name.toLowerCase().includes(q))&&(!f||x.type===f));
- document.getElementById('market').innerHTML=list.map((x,i)=>`<div class="item">
- <div class="photo">${x.emoji||'👕'}</div><div class="item-info"><div class="type">${x.type}</div><b>${x.name}</b><p class="price">${x.price}</p><small>Marca: ${x.brand||'Não informada'} · Tamanho: ${x.size||'Não informado'} · ${x.quality||'Bom estado'}</small>
- <button onclick="interact(${i})">${x.type==='Venda'?'Tenho interesse':'Quero participar'}</button></div></div>`).join('')||'<p>Nenhuma peça encontrada.</p>';
-}
-function interact(i){
- if(!user){showAuth('login');toast('Entre ou crie uma conta para continuar.');return}
- user.actions=(user.actions||0)+1;
- if(items[i].type==='Troca'||items[i].type==='Doação') user.points=(user.points||0)+10;
- save();toast(items[i].type==='Venda'?'Interesse enviado (demonstração)!':'Ação registrada! Você ganhou 10 Re.Pontos.');renderUser();
-}
-function renderUser(){
- const chip=document.getElementById('profileChip'), acc=document.getElementById('accountTop'), login=document.getElementById('loginTop');
- if(user){chip.style.display='inline-block';chip.textContent='👤 '+user.name.split(' ')[0];acc.textContent='Minha conta';login.style.display='none';
- acc.onclick=()=>openDashboard();chip.onclick=()=>openDashboard();
- }else{chip.style.display='none';acc.textContent='Criar conta';login.style.display='inline-block';acc.onclick=()=>showAuth('register');login.onclick=()=>showAuth('login');}
-}
-function showAuth(mode){
- const c=document.getElementById('authContent');
- c.innerHTML=mode==='register'?`<h2>Crie sua conta ✨</h2><p>Entre na comunidade ReVeste.</p><form id="registerForm">
- <label>Seu nome</label><input id="regName" required placeholder="Seu nome">
- <label style="margin-top:12px">E-mail</label><input id="regEmail" type="email" required placeholder="voce@email.com">
- <label style="margin-top:12px">Senha</label><input id="regPass" type="password" required placeholder="Crie uma senha">
- <button class="form-btn">Criar minha conta</button></form>
- <div class="switch">Já possui conta? <a onclick="showAuth('login')">Entrar</a></div>`
- :`<h2>Bem-vindo de volta 👋</h2><p>Entre na sua conta ReVeste.</p><form id="loginForm">
- <label>E-mail</label><input id="loginEmail" type="email" required>
- <label style="margin-top:12px">Senha</label><input id="loginPass" type="password" required>
- <button class="form-btn">Entrar</button></form>
- <div class="switch">Ainda não possui conta? <a onclick="showAuth('register')">Criar conta</a></div>`;
- openModal('authModal');
- if(mode==='register')document.getElementById('registerForm').onsubmit=e=>{e.preventDefault();user={name:regName.value,email:regEmail.value,password:regPass.value,points:0,actions:0};save();closeModal('authModal');renderUser();toast('Conta criada com sucesso! 🎉')};
- else document.getElementById('loginForm').onsubmit=e=>{e.preventDefault();if(user&&loginEmail.value===user.email&&loginPass.value===user.password){closeModal('authModal');renderUser();toast('Login realizado! Bem-vindo de volta.')}else toast('E-mail ou senha não encontrados neste dispositivo.');};
-}
-function requireLoginThenAnnounce(){if(!user){showAuth('register');toast('Crie uma conta para anunciar.');return}openModal('announceModal')}
-document.getElementById('announceTop').onclick=requireLoginThenAnnounce;
-document.getElementById('announceMarket').onclick=requireLoginThenAnnounce;
-document.getElementById('search').oninput=renderMarket;document.getElementById('modeFilter').onchange=renderMarket;
-document.getElementById('announceForm').onsubmit=e=>{e.preventDefault();const type=itemType.value;let price=type==='Venda'?(itemPrice.value?`R$ ${Number(itemPrice.value).toFixed(2).replace('.',',')}`:'A combinar'):type==='Troca'?'Troca disponível':'Doação ❤️';
-items.unshift({name:itemName.value,type,price,emoji:type==='Venda'?'👕':type==='Troca'?'🔄':'❤️',owner:user.name,size:itemSize.value,brand:itemBrand.value,quality:itemQuality.value,desc:itemDesc.value});user.points=(user.points||0)+(type==='Venda'?5:15);save();closeModal('announceModal');renderMarket();renderUser();toast(`Anúncio publicado! Você ganhou ${type==='Venda'?5:15} Re.Pontos.`);e.target.reset()};
-function openDashboard(){if(!user)return;dashTitle.textContent='Olá, '+user.name+' 👋';dashPoints.textContent=user.points||0;dashAds.textContent=items.filter(x=>x.owner===user.name).length;dashActions.textContent=user.actions||0;openModal('dashboardModal')}
-document.getElementById('pointsBtn').onclick=()=>{if(!user){showAuth('register');toast('Crie uma conta para acompanhar seus pontos.');return}openDashboard()};
-document.getElementById('logoutBtn').onclick=()=>{user=null;localStorage.removeItem('reveste_user');closeModal('dashboardModal');renderUser();toast('Você saiu da conta.')};
-document.getElementById('accountTop').onclick=()=>showAuth('register');document.getElementById('loginTop').onclick=()=>showAuth('login');
-renderMarket();renderUser();
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ==========================================================
-   RE.VESTE — CONFIGURAÇÃO DO BANCO DE DADOS
-   Cole aqui os dados do seu projeto Supabase.
-   ========================================================== */
+/* =========================================================
+   RE.VESTE — CONFIGURAÇÃO SUPABASE
+   Use a Project URL (sem /rest/v1/) e a Publishable Key.
+   ========================================================= */
 const SUPABASE_URL = "https://rvimgfwlxfdjtusnfhvm.supabase.co";
-const SUPABASE_ANON_KEY = "COLE_AQUI_A_CHAVE_ANON_DO_SEU_PROJETO";
+const SUPABASE_ANON_KEY = "https://rvimgfwlxfdjtusnfhvm.supabase.co";
 
 const CLOUD_ENABLED =
   !SUPABASE_URL.startsWith("COLE_AQUI") &&
@@ -248,79 +182,334 @@ const CLOUD_ENABLED =
 const sb = CLOUD_ENABLED
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
-</script>
 
+const defaultItems = [
+  {id:'demo1',name:'Jaqueta vintage',type:'Venda',price:'R$ 85,00',emoji:'🧥',owner:'Comunidade ReVeste',region:'Sudeste',brand:'Sem marca',size:'M',quality:'Excelente'},
+  {id:'demo2',name:'Vestido floral',type:'Troca',price:'Troca disponível',emoji:'👗',owner:'Comunidade ReVeste',region:'Sul',brand:'Sem marca',size:'P',quality:'Boa'},
+  {id:'demo3',name:'Camiseta casual',type:'Doação',price:'Doação ❤️',emoji:'👕',owner:'Comunidade ReVeste',region:'Nordeste',brand:'Sem marca',size:'G',quality:'Boa'}
+];
 
-<script>
-/* Funções para sincronizar anúncios entre todas as pessoas */
-async function cloudLoadItems() {
-  if (!CLOUD_ENABLED) return false;
-  const { data, error } = await sb.from('offers').select('*').order('created_at', { ascending: false });
-  if (error) { console.error(error); return false; }
-  items = data.map(o => ({
-    id:o.id, name:o.name, type:o.type, price:o.price || '',
-    emoji:o.emoji || '👕', owner:o.owner_name || 'Comunidade ReVeste',
-    size:o.size, brand:o.brand, quality:o.quality, desc:o.description
+let items = [...defaultItems];
+let user = null;
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+
+function escapeHtml(value=''){
+  return String(value).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+  }[c]));
+}
+
+function renderMarket(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  const f=document.getElementById('modeFilter').value;
+  const list=items.filter(x =>
+    (!q || [x.name,x.brand,x.region,x.owner].join(' ').toLowerCase().includes(q)) &&
+    (!f || x.type===f)
+  );
+  document.getElementById('market').innerHTML=list.map(x=>`
+    <div class="item">
+      <div class="photo">${x.emoji||'👕'}</div>
+      <div class="item-info">
+        <div class="type">${escapeHtml(x.type)}</div>
+        <b>${escapeHtml(x.name)}</b>
+        <p class="price">${escapeHtml(x.price||'A combinar')}</p>
+        <small>📍 ${escapeHtml(x.region||'Região não informada')} · Marca: ${escapeHtml(x.brand||'Não informada')} · Tamanho: ${escapeHtml(x.size||'Não informado')} · ${escapeHtml(x.quality||'Bom estado')}</small>
+        <button onclick="interact('${x.id}')">${x.type==='Venda'?'Tenho interesse':'Quero participar'}</button>
+      </div>
+    </div>`).join('') || '<p>Nenhuma peça encontrada.</p>';
+}
+
+async function loadOffers(){
+  if(!CLOUD_ENABLED) return;
+  const {data,error}=await sb.from('offers')
+    .select('*')
+    .order('created_at',{ascending:false});
+
+  if(error){
+    console.error(error);
+    toast('Não foi possível carregar as ofertas. Verifique a configuração do Supabase.');
+    return;
+  }
+
+  items = (data||[]).map(o=>({
+    id:o.id,
+    name:o.name,
+    type:o.type,
+    price:o.price || (o.type==='Doação'?'Doação ❤️':o.type==='Troca'?'Troca disponível':'A combinar'),
+    emoji:o.emoji||'👕',
+    owner:o.owner_name||'Comunidade ReVeste',
+    region:o.region||'Não informada',
+    size:o.size,
+    brand:o.brand,
+    quality:o.quality,
+    desc:o.description
   }));
   renderMarket();
-  return true;
 }
-async function cloudAddOffer(offer) {
-  if (!CLOUD_ENABLED) return false;
-  const { error } = await sb.from('offers').insert([{
-    name:offer.name, type:offer.type, price:offer.price,
-    emoji:offer.emoji, owner_name:offer.owner, size:offer.size,
-    brand:offer.brand, quality:offer.quality, description:offer.desc
-  }]);
-  if (error) { console.error(error); toast('Não foi possível publicar no banco.'); return false; }
-  return true;
-}
-async function cloudLoadProfile() {
-  if (!CLOUD_ENABLED) return;
-  const { data:{ user:authUser } } = await sb.auth.getUser();
-  if (authUser) {
-    const { data:profile } = await sb.from('profiles').select('*').eq('id',authUser.id).maybeSingle();
-    user = {
-      id:authUser.id,
-      name:profile?.name || authUser.email.split('@')[0],
-      email:authUser.email,
-      points:profile?.points || 0,
-      actions:profile?.actions || 0
-    };
-    save(); renderUser();
-  }
-}
-window.addEventListener('load', async () => {
-  if (CLOUD_ENABLED) {
-    document.getElementById('cloudStatus').textContent='☁️ Banco online conectado — anúncios compartilhados';
-    await cloudLoadProfile();
-    await cloudLoadItems();
-  }
-});
-</script>
 
+async function loadProfile(){
+  if(!CLOUD_ENABLED) return;
+  const {data:{user:authUser}}=await sb.auth.getUser();
+  if(!authUser){
+    user=null; renderUser(); return;
+  }
 
-<script>
-document.getElementById('announceForm').addEventListener('submit', async function(e){
-  if (!CLOUD_ENABLED) return;
-  e.preventDefault();
-  if (!user) { showAuth('register'); toast('Crie uma conta para anunciar.'); return; }
-  const type=itemType.value;
-  const price=type==='Venda'?(itemPrice.value?`R$ ${Number(itemPrice.value).toFixed(2).replace('.',',')}`:'A combinar'):type==='Troca'?'Troca disponível':'Doação ❤️';
-  const offer={
-    name:itemName.value,type,price,
-    emoji:type==='Venda'?'👕':type==='Troca'?'🔄':'❤️',
-    owner:user.name,size:itemSize.value,brand:itemBrand.value,
-    quality:itemQuality.value,desc:itemDesc.value
+  const {data:profile,error}=await sb.from('profiles')
+    .select('*')
+    .eq('id',authUser.id)
+    .maybeSingle();
+
+  if(error){ console.error(error); }
+
+  user={
+    id:authUser.id,
+    name:profile?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+    email:authUser.email,
+    region:profile?.region || authUser.user_metadata?.region || '',
+    points:profile?.points || 0,
+    actions:profile?.actions || 0
   };
-  const ok=await cloudAddOffer(offer);
-  if(ok){
-    closeModal('announceModal');
-    this.reset();
-    await cloudLoadItems();
-    toast('Anúncio publicado para toda a comunidade! 🎉');
+  renderUser();
+}
+
+function renderUser(){
+  const chip=document.getElementById('profileChip');
+  const acc=document.getElementById('accountTop');
+  const login=document.getElementById('loginTop');
+
+  if(user){
+    chip.style.display='inline-block';
+    chip.textContent='👤 '+(user.name||'Usuário').split(' ')[0];
+    acc.textContent='Minha conta';
+    login.style.display='none';
+    acc.onclick=openDashboard;
+    chip.onclick=openDashboard;
+  }else{
+    chip.style.display='none';
+    acc.textContent='Criar conta';
+    login.style.display='inline-block';
+    acc.onclick=()=>showAuth('register');
+    login.onclick=()=>showAuth('login');
   }
-}, true);
+}
+
+async function interact(){
+  if(!user){
+    showAuth('login');
+    toast('Entre ou crie uma conta para continuar.');
+    return;
+  }
+  // Sem pontos por cliques: evita farmar pontos ao repetir a mesma função.
+  toast('Interesse registrado! Em uma versão completa, aqui abriria o contato entre os usuários.');
+}
+
+function showAuth(mode){
+  const c=document.getElementById('authContent');
+
+  if(mode==='register'){
+    c.innerHTML=`
+      <h2>Crie sua conta ✨</h2>
+      <p>Entre na comunidade ReVeste.</p>
+      <form id="registerForm">
+        <label>Seu nome</label>
+        <input id="regName" required placeholder="Seu nome">
+        <label style="margin-top:12px">E-mail</label>
+        <input id="regEmail" type="email" required placeholder="voce@email.com">
+        <label style="margin-top:12px">Senha</label>
+        <input id="regPass" type="password" required minlength="6" placeholder="Mínimo 6 caracteres">
+        <label style="margin-top:12px">Sua região</label>
+        <select id="regRegion" required>
+          <option value="">Selecione</option>
+          <option>Norte</option><option>Nordeste</option><option>Centro-Oeste</option>
+          <option>Sudeste</option><option>Sul</option>
+        </select>
+        <button class="form-btn">Criar minha conta</button>
+      </form>
+      <div class="switch">Já possui conta? <a onclick="showAuth('login')">Entrar</a></div>`;
+  } else {
+    c.innerHTML=`
+      <h2>Bem-vindo de volta 👋</h2>
+      <p>Entre na sua conta ReVeste.</p>
+      <form id="loginForm">
+        <label>E-mail</label>
+        <input id="loginEmail" type="email" required>
+        <label style="margin-top:12px">Senha</label>
+        <input id="loginPass" type="password" required>
+        <button class="form-btn">Entrar</button>
+      </form>
+      <div class="switch">Ainda não possui conta? <a onclick="showAuth('register')">Criar conta</a></div>`;
+  }
+
+  openModal('authModal');
+
+  if(mode==='register'){
+    document.getElementById('registerForm').onsubmit=async e=>{
+      e.preventDefault();
+      if(!CLOUD_ENABLED){
+        toast('Configure a Project URL e a Publishable Key para criar contas online.');
+        return;
+      }
+
+      const name=document.getElementById('regName').value.trim();
+      const email=document.getElementById('regEmail').value.trim();
+      const password=document.getElementById('regPass').value;
+      const region=document.getElementById('regRegion').value;
+
+      const {data,error}=await sb.auth.signUp({
+        email,password,
+        options:{data:{name,region}}
+      });
+
+      if(error){ toast(error.message); return; }
+
+      // Cria/atualiza o perfil quando a sessão já estiver disponível.
+      if(data.user && data.session){
+        const {error:profileError}=await sb.from('profiles').upsert({
+          id:data.user.id,name,region
+        });
+        if(profileError) console.error(profileError);
+        await loadProfile();
+        closeModal('authModal');
+        toast('Conta criada e salva online! 🎉');
+      } else {
+        closeModal('authModal');
+        toast('Conta criada! Verifique seu e-mail para confirmar e depois entre.');
+      }
+    };
+  }else{
+    document.getElementById('loginForm').onsubmit=async e=>{
+      e.preventDefault();
+      if(!CLOUD_ENABLED){
+        toast('Configure a Project URL e a Publishable Key para entrar.');
+        return;
+      }
+
+      const email=document.getElementById('loginEmail').value.trim();
+      const password=document.getElementById('loginPass').value;
+
+      const {error}=await sb.auth.signInWithPassword({email,password});
+      if(error){ toast('Não foi possível entrar: '+error.message); return; }
+
+      await loadProfile();
+      closeModal('authModal');
+      toast('Login realizado! Bem-vindo de volta. 👋');
+    };
+  }
+}
+
+function requireLoginThenAnnounce(){
+  if(!user){
+    showAuth('login');
+    toast('Crie uma conta ou entre para publicar.');
+    return;
+  }
+  openModal('announceModal');
+}
+
+async function publishOffer(e){
+  e.preventDefault();
+
+  if(!user || !CLOUD_ENABLED){
+    toast('Entre na sua conta e confirme a configuração do Supabase.');
+    return;
+  }
+
+  const type=document.getElementById('itemType').value;
+  const rawPrice=document.getElementById('itemPrice').value.trim();
+  const price=type==='Venda'
+    ? (rawPrice ? `R$ ${Number(rawPrice.replace(',','.')).toFixed(2).replace('.',',')}` : 'A combinar')
+    : type==='Troca' ? 'Troca disponível' : 'Doação ❤️';
+
+  const offer={
+    owner_id:user.id,
+    name:document.getElementById('itemName').value.trim(),
+    type,
+    price,
+    emoji:type==='Venda'?'👕':type==='Troca'?'🔄':'❤️',
+    owner_name:user.name,
+    region:document.getElementById('itemRegion').value,
+    size:document.getElementById('itemSize').value,
+    brand:document.getElementById('itemBrand').value.trim(),
+    quality:document.getElementById('itemQuality').value,
+    description:document.getElementById('itemDesc').value.trim()
+  };
+
+  if(!offer.name || !offer.region || !offer.size || !offer.brand || !offer.quality){
+    toast('Preencha todos os campos obrigatórios.');
+    return;
+  }
+
+  const button=e.target.querySelector('button[type="submit"], .form-btn');
+  const oldText=button?.textContent;
+  if(button){ button.disabled=true; button.textContent='Publicando...'; }
+
+  const {error}=await sb.from('offers').insert([offer]);
+
+  if(button){ button.disabled=false; button.textContent=oldText; }
+
+  if(error){
+    console.error(error);
+    toast('Não foi possível publicar: '+error.message);
+    return;
+  }
+
+  closeModal('announceModal');
+  e.target.reset();
+  await loadOffers();
+  await loadProfile();
+  toast('Anúncio publicado para a comunidade! 🎉');
+}
+
+async function openDashboard(){
+  if(!user) return;
+  await loadProfile();
+  const {count}=CLOUD_ENABLED
+    ? await sb.from('offers').select('*',{count:'exact',head:true}).eq('owner_id',user.id)
+    : {count:0};
+
+  document.getElementById('dashTitle').textContent='Olá, '+user.name+' 👋';
+  document.getElementById('dashPoints').textContent=user.points||0;
+  document.getElementById('dashAds').textContent=count||0;
+  document.getElementById('dashActions').textContent=user.actions||0;
+  openModal('dashboardModal');
+}
+
+document.getElementById('announceTop').onclick=requireLoginThenAnnounce;
+document.getElementById('announceMarket').onclick=requireLoginThenAnnounce;
+document.getElementById('search').oninput=renderMarket;
+document.getElementById('modeFilter').onchange=renderMarket;
+document.getElementById('announceForm').onsubmit=publishOffer;
+document.getElementById('pointsBtn').onclick=()=>user?openDashboard():showAuth('register');
+document.getElementById('logoutBtn').onclick=async()=>{
+  if(CLOUD_ENABLED) await sb.auth.signOut();
+  user=null;
+  closeModal('dashboardModal');
+  renderUser();
+  toast('Você saiu da conta.');
+};
+
+renderMarket();
+renderUser();
+
+window.addEventListener('load',async()=>{
+  if(!CLOUD_ENABLED){
+    toast('Configure a Project URL e a Publishable Key para ativar o modo online.');
+    return;
+  }
+  await loadProfile();
+  await loadOffers();
+
+  sb.auth.onAuthStateChange(async ()=>{
+    await loadProfile();
+  });
+});
 </script>
 
 </body></html>
